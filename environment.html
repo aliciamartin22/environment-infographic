@@ -1,0 +1,307 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8" />
+<title>Interactive Environmental Infographic - Alicia</title>
+
+<!-- Welcome to ZIM at https://zimjs.com - Code Creativity! -->
+<!-- ZIM runs on the HTML Canvas powered by JavaScript and CreateJS https://createjs.com -->
+<!-- Founded by Inventor Dan Zen - http://danzen.com - Canadian New Media Award Winner 	-->
+<!-- ZIM is free to use. You can donate to help improve ZIM at http://zimjs.com/donate 	-->
+<!-- FISH AND ANIMAL CREDITS GO TO - 'https://www.freepik.com/free-vector/sea-animals-collection_965169.htm'>D esigned by Terdpongvector -->
+<!-- FACT SOURCE - https://kids.nationalgeographic.com/explore/nature/kids-vs-plastic/ocean-plastic-by-the-numbers/ -->
+
+<script src="https://d309knd7es5f10.cloudfront.net/createjs_1.1_min.js"></script>
+<script src="https://d309knd7es5f10.cloudfront.net/zim_9.3.0.js"></script>
+
+<script>
+var scaling = "fit"; // this will resize to fit inside the screen dimensions
+var width = 1024;
+var height = 768;
+var color = dark; // ZIM colors like green, blue, pink, faint, clear, etc. available globally
+var outerColor = light; // any HTML colors like "violet", "#333", etc. fine to use
+var assets = ["background.png", "fish1.png", "fish2.png", "fish3.png", "fish4.png", "fish5.png", "fish6.png", "fish7.png", "fish8.png", "fish9.png", "fish10.png", "fish11.png", "bag.png", "bags.png", "beer.png", "blackBag.png", "bottle.png", "can.png", "chips.png", "coffee.png", "coke.png", "cup.png", "foam.png", "openBag.png", "papers.png"];
+var path = "assets/";
+
+var frame = new Frame(scaling, width, height, color, outerColor, assets, path, new Waiter({foregroundColor:green, backgroundColor:pink}));
+frame.on("ready", function() {
+    zog("ready from ZIM Frame"); // logs in console (F12 - choose console)
+
+    var stage = frame.stage;
+    var stageW = frame.width;
+    var stageH = frame.height;
+
+// background
+frame.asset("background.png").centerReg().sca(.8);
+new Rectangle(1024,768,black).centerReg().alp(.1);
+
+// Wobble on top of the screen
+function makeBlob(color) {
+			var arm = 300; // bezier point size - bigger smoothens curves
+			var blob = new Blob({
+				color:color,
+				points:[
+					[200,0,0,0,0,-arm,0,arm,"mirror"],
+					[200,stageW/2,0,0,0,0,0,0,"none"],
+					[-200,stageW/2,0,0,0,0,0,0,"none"],
+					[-200,0,0,0,0,arm,0,-arm,"mirror"],
+					[-200,-stageW/2,0,0,0,0,0,0,"none"],
+					[200,-stageW/2,0,0,0,0,0,0,"none"]
+				],
+                showControls:false,
+                lockControls:true,
+                lockControlType:true,
+				allowToggle:false,
+                interactive:false
+			}).center(stage);
+
+			var points = blob.pointObjects;
+			var angleMin = 20;
+			var angleMax = 60;
+			points[3][0].wiggle("rotation", 0, angleMin, angleMax, 5000, 8000, null, null, null, null, null, "positive");
+			points[0][0].wiggle("rotation", 0, angleMin, angleMax, 5000, 8000, null, null, null, null, null, "negative");
+
+			var distMin = 20;
+			var distMax = 100;
+			points[0][0].wiggle("x", 150, distMin, distMax, 5000, 8000);
+			points[3][0].wiggle("x", -150, distMin, distMax, 5000, 8000);
+
+			points[0][0].wiggle("y", 0, distMin, distMax, 5000, 8000);
+			points[3][0].wiggle("y", 0, distMin, distMax, 5000, 8000);
+
+			return blob;
+		}
+
+		var blob1 = makeBlob(blue).mov(-250).alp(.1).sca(1.2);
+		var blob2 = makeBlob(purple).mov(250).alp(.1).sca(1.2);
+		var blob3 = makeBlob(green).mov(0).alp(.1).sca(1.2);
+		blob2.blendMode = "difference";
+		blob3.blendMode = "difference";
+
+		var ticker = Ticker.raw(function() {
+			blob1.update();
+			blob2.update();
+			blob3.update();
+			stage.update();
+		});
+
+var start = new Pane({
+  width:600,
+  height:300,
+  titleBar:new Label({text:"Change Starts With You!", size:30, color:black}).mov(100),
+  titleBarColor:yellow,
+  titleBarHeight:55,
+  backgroundColor:green,
+  label: new Label({text:"Learn how plastic is destroying our oceans today. Do your part, and click on some of the commonly found pieces of garbage to eliminate them from the ocean.", size:26, color:black, lineWidth:450, lineHeight:38}).center(start),
+  close:true
+}).show();
+
+// Fish animating sideways
+Ticker.add(animate);
+
+sendFish();
+
+var Fish = new Container();
+stage.addChild(Fish);
+
+function sendFish() {
+
+// 	Use an interval to randomly set the interval
+	interval({min:3000, max:5000}, function() {
+		var fish = frame.asset("fish"+rand(1,11)+".png").sca(.5).clone();
+		fish
+			.reg(fish.height/2, fish.width)
+			.pos(1024, rand(fish.width, stage.height-fish.height))
+            .animate({
+              props:{rotation:{min:-30, max:30}},
+              rewind:true,
+              loop:true,
+              time:1000,
+              ease:"linear",
+              dynamic:true,
+            })
+			.addTo(Fish);
+	});
+};
+
+var speed = 2;
+function animate() {
+// Loop backwards through all the children of the falling item container
+loop(Fish, function(fish) {
+	// 13. move the item
+	fish.x-=speed;
+}, true); // true loops backwards as we are removing children
+};
+
+// to move the sink around and change its force we will use zim.wiggle() down below
+var sink = new zim.Circle(10, frame.blue).centerReg(stage).mov(0,0).alp(0);
+
+// create the emitter for the garbage
+var garbage = new zim.Emitter({
+	obj:makegarbage,
+	animation:{obj:{rotation:["360","-360"]}, loop:true, time:{min:3000, max:5000}, ease:"linear"},
+	random:{
+		rotation:{min:0, max:360},
+		scale:{min:.8, max:1.2}
+	},
+	sink:sink,
+	cache:zim.mobile(),
+	interval:1500,
+	num:1,
+	life:10000,
+	decayTime:2000,
+	gravity:0.2,
+	force:{min:0.1, max:0.3},
+	angle:90,
+	width:stageW+400, // for swirling
+	horizontal:true,
+	poolMin:10
+})
+	.addTo(stage)
+	.mov(-200,-20)
+    .cur()
+
+var force = wiggle(garbage, "sinkForce", .5, .2, .3, 5000, 8000);
+var pos = wiggle(sink, "x", stageW/2, 30, 100, 6000, 10000);
+var pos = wiggle(sink, "y", stageH/2, 80, 150, 6000, 10000);
+
+var darkBg = new Rectangle(stageW, stageH);
+
+function makeFacts() {
+    var facts = [
+        "700 species of animals are severely threatened because of ocean waste",
+        "22 million tons of carbon dioxide is absorbed by the ocean each day because of trash",
+        "10% of all dead animals found in beach cleanups worldwide were entangled in plastic bags",
+        "443 animals and birds were trapped by marine debris during a recent international coastal cleanup",
+        "5 trillion pieces of plastic are floating in the world's seas",
+        "90% of seabirds eat plastic trash",
+        "20% of fish found during one expendition had plastic in their stomachs",
+        "52% of sea turtles worldwide have accidentally eaten plastic trash in the ocean"
+    ];
+	var fact = shuffle(facts)[0];
+    zog(fact);
+	return fact;
+    stage.update();
+}
+
+// click on garbage to view larger
+stage.on("stagemousedown", function() {
+	// don't let them click while a garbage is being viewed
+	if (stage.contains(darkBg)) return;
+	// loop through the garbages and see if one hits the mouse position
+	zim.loop(garbage, function(garbage) {
+		if (garbage.hitTestPoint(stage.mouseX, stage.mouseY)) {
+            zog("clicking on");
+			darkBg.addTo(stage).animate({
+				set:{alpha:.9},	obj:{alpha:0}, from:true, ease:"linear",
+				time:1000, rewindWait:3800, rewind:true,
+				call:function() {darkBg.removeFrom(stage);}
+			})
+			garbage.addTo(stage).mov(-200,-50).cur();
+
+            var factPOP = new Pane({
+              width:500,
+              height:250,
+              titleBar:"Did You Know?",
+              titleBarColor:green,
+              backgroundColor:blue,
+              label: new Label({text:makeFacts(), size:26, color:black, lineWidth:450, lineHeight:38}),
+              close:true
+          }).show();
+
+			garbage.stopAnimate("decay");
+			garbage.animate({props:[
+				{set:{alpha:1}, obj:{x:stageW/2, y:stageH/2, scale:5}, time:5000, ease:"elasticOut"},
+				{obj:{alpha:0}, time:2000, call:function(t) {
+					t.removeFrom(stage);
+					t.stopAnimate();
+				}}
+			],id:"garbage"});
+			garbage.on("click",function(){
+				zog("clicking away");
+				garbage.stopAnimate("garbage");
+				garbage.animate(
+					{obj:{alpha:0}, time:500, call:function(t) {
+						t.removeFrom(stage);
+						t.stopAnimate();
+					}}
+				);
+				darkBg.stopAnimate();
+				darkBg.animate(
+					{obj:{alpha:0}, time:500, call:function(t) {
+						t.removeFrom(stage);
+						t.stopAnimate();
+					}}
+				);
+			})
+		}
+	}, true);
+});
+
+// here is a function to make random garbage
+function makegarbage() {
+	var garbage = new Container(200,200);
+	garbage.mouseChildren = false;
+    var bag = new Container(200,200);
+    frame.asset("bag.png").sca(.2).centerReg(bag);
+    var bags = new Container(200,200);
+    frame.asset("bags.png").sca(.5).centerReg(bags);
+    var beer = new Container(200,200);
+    frame.asset("beer.png").sca(.6).centerReg(beer);
+    var blackBag = new Container(200,200);
+    frame.asset("blackBag.png").sca(.5).centerReg(blackBag);
+    var bottle = new Container(200,200);
+    frame.asset("bottle.png").sca(.5).centerReg(bottle);
+    var can = new Container(200,200);
+    frame.asset("can.png").sca(.8).centerReg(can);
+    var chips = new Container(200,200);
+    frame.asset("chips.png").sca(.4).centerReg(chips);
+    var coffee = new Container(200,200);
+    frame.asset("coffee.png").sca(.8).centerReg(coffee);
+    var coke = new Container(200,200);
+    frame.asset("coke.png").sca(.5).centerReg(coke);
+    var cup = new Container(200,200);
+    frame.asset("cup.png").sca(.5).centerReg(cup);
+    var foam = new Container(200,200);
+    frame.asset("foam.png").sca(.6).centerReg(foam);
+    var openBag = new Container(200,200);
+    frame.asset("openBag.png").sca(.4).centerReg(openBag);
+    var papers = new Container(200,200);
+    frame.asset("papers.png").sca(.3).centerReg(papers);
+	var shapes = [
+		bag,
+		bags,
+        beer,
+        blackBag,
+        bottle,
+        can,
+        chips,
+        coffee,
+        coke,
+        cup,
+        foam,
+        openBag,
+        papers
+	];
+	loop(rand(1), function(){
+		shuffle(shapes)[0]
+			.clone()
+			.centerReg(garbage)
+			.alp(rand(.8,1))
+	});
+	return garbage;
+}
+
+stage.update();
+}); // end of ready
+
+</script>
+
+<meta name="viewport" content="width=device-width, user-scalable=no" />
+
+</head>
+
+<body>
+<!-- canvas with id="myCanvas" is made by zim Frame -->
+</body>
+</html>
